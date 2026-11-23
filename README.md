@@ -1,5 +1,7 @@
 # LabLink — Making College Laboratories More Accessible
 
+**Live demo: https://lablink-liart.vercel.app**
+
 GenAI-powered campus laboratory resource-sharing platform: equipment discovery, intelligent slot booking,
 project-based access requests, faculty approvals, and fair, explainable conflict resolution.
 
