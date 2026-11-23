@@ -33,3 +33,19 @@ gcloud run deploy lablink --source . --region <region> --allow-unauthenticated -
   --set-env-vars SESSION_SECRET=<random>,GEMINI_API_KEY=<optional>
 ```
 Data is in-memory (reseeded on start); use `--max-instances 1`.
+
+## How it meets the challenge
+| Requirement | Where |
+|---|---|
+| Equipment discovery across departments | Discover page, natural-language search, similar-equipment suggestions |
+| Intelligent slot booking | Equipment calendar, live validation, quotas, check-in, no-show release |
+| Project-based access requests | Projects page and access-request flow |
+| Faculty approvals | Approvals inbox (access requests and long bookings) |
+| Optimising resource utilisation | Analytics, demand heatmap, load-balancing recommendations, waitlist, auto-release |
+| Resolve conflicts fairly and feasibly | `server/services/resolver.js` and `priority.js`; ranked options with explanations |
+
+## Quality
+- **Tests:** 93 tests (`npm test`): unit tests for scheduling, priority, resolver, planner and search, plus HTTP integration tests for auth, CSRF, rate limits, approvals, swaps, waitlist and no-show release. `npm run test:coverage` prints coverage.
+- **Lint:** `npm run lint` (syntax, unused imports) runs in CI on Node 20 and 22.
+- **Accessibility:** skip link, landmarks, focus management on navigation, keyboard-operable calendar with arrow keys, labelled controls, live regions for results and toasts, focus-trapped dialogs, visible focus rings, reduced-motion and forced-colours support, light and dark themes.
+- **More:** see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [SECURITY.md](SECURITY.md).
