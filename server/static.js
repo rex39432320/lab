@@ -28,7 +28,9 @@ export function createStaticHandler(root) {
     const ext = path.extname(file);
     const body = fs.readFileSync(file);
     const entry = {
-      mtimeMs: stat.mtimeMs, body, type: TYPES[ext] ?? 'application/octet-stream',
+      mtimeMs: stat.mtimeMs,
+      body,
+      type: TYPES[ext] ?? 'application/octet-stream',
       gzip: COMPRESSIBLE.has(ext) ? zlib.gzipSync(body) : null,
       etag: `"${crypto.createHash('sha1').update(body).digest('base64url').slice(0, 20)}"`,
     };
@@ -48,10 +50,16 @@ export function createStaticHandler(root) {
     if (rel.includes('\0')) return false;
     if (rel === '/' || !path.extname(rel)) rel = '/index.html';
     const file = path.resolve(base, `.${path.posix.normalize(rel)}`);
-    if (!file.startsWith(base + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) return false;
+    if (!file.startsWith(base + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile())
+      return false;
 
     const entry = load(file);
-    const headers = { 'Content-Type': entry.type, ETag: entry.etag, 'Cache-Control': 'no-cache', Vary: 'Accept-Encoding' };
+    const headers = {
+      'Content-Type': entry.type,
+      ETag: entry.etag,
+      'Cache-Control': 'no-cache',
+      Vary: 'Accept-Encoding',
+    };
     if (req.headers['if-none-match'] === entry.etag) {
       res.writeHead(304, headers).end();
       return true;

@@ -22,7 +22,18 @@ export function createSeededStore(now = NOW) {
 export async function startServer({ ai = createAi({ apiKey: '' }), now = NOW, config = {} } = {}) {
   const store = createSeededStore(now);
   const clock = { current: { ...now } };
-  const app = createApp({ store, ai, clock: () => clock.current, config: { secret: 'test-secret', demoMode: true, sweepIntervalMs: 0, limits: { loginPerIp: 10_000, apiPerMinute: 100_000 }, ...config } });
+  const app = createApp({
+    store,
+    ai,
+    clock: () => clock.current,
+    config: {
+      secret: 'test-secret',
+      demoMode: true,
+      sweepIntervalMs: 0,
+      limits: { loginPerIp: 10_000, apiPerMinute: 100_000 },
+      ...config,
+    },
+  });
   const server = http.createServer(app.handler);
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
@@ -30,12 +41,21 @@ export async function startServer({ ai = createAi({ apiKey: '' }), now = NOW, co
   async function request(method, path, { body, cookie, headers = {} } = {}) {
     const res = await fetch(base + path, {
       method,
-      headers: { 'X-Requested-With': 'lablink', ...(body !== undefined && { 'Content-Type': 'application/json' }), ...(cookie && { Cookie: cookie }), ...headers },
+      headers: {
+        'X-Requested-With': 'lablink',
+        ...(body !== undefined && { 'Content-Type': 'application/json' }),
+        ...(cookie && { Cookie: cookie }),
+        ...headers,
+      },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const text = await res.text();
     let json = null;
-    try { json = JSON.parse(text); } catch { /* non-JSON body */ }
+    try {
+      json = JSON.parse(text);
+    } catch {
+      /* non-JSON body */
+    }
     return { status: res.status, body: json, text, headers: res.headers };
   }
 
@@ -46,7 +66,12 @@ export async function startServer({ ai = createAi({ apiKey: '' }), now = NOW, co
     const res = await request('POST', '/api/auth/login', { body: { email, password } });
     if (res.status !== 200) throw new Error(`login failed for ${email}: ${res.status}`);
     const cookie = res.headers.get('set-cookie').split(';')[0];
-    const client = Object.fromEntries(['get', 'post', 'patch', 'delete'].map((m) => [m, (path, body) => request(m.toUpperCase(), path, { body, cookie })]));
+    const client = Object.fromEntries(
+      ['get', 'post', 'patch', 'delete'].map((m) => [
+        m,
+        (path, body) => request(m.toUpperCase(), path, { body, cookie }),
+      ]),
+    );
     clients.set(email, client);
     return client;
   }
@@ -58,7 +83,14 @@ export async function startServer({ ai = createAi({ apiKey: '' }), now = NOW, co
       const date = addDays(now.date, i);
       for (const [a, b] of freeWindows(store, eq, date, now)) {
         for (let start = a; start + hours <= b; start++) {
-          const clash = store.data.bookings.some((x) => x.userId === userId && x.date === date && x.status !== 'cancelled' && start < x.endHour && x.startHour < start + hours);
+          const clash = store.data.bookings.some(
+            (x) =>
+              x.userId === userId &&
+              x.date === date &&
+              x.status !== 'cancelled' &&
+              start < x.endHour &&
+              x.startHour < start + hours,
+          );
           if (!clash) return { equipmentId, date, startHour: start, endHour: start + hours };
         }
       }
@@ -66,5 +98,16 @@ export async function startServer({ ai = createAi({ apiKey: '' }), now = NOW, co
     throw new Error(`no free ${hours}h window on ${equipmentId}`);
   }
 
-  return { store, base, request, login, findFree, clock, close: () => { app.close(); server.close(); } };
+  return {
+    store,
+    base,
+    request,
+    login,
+    findFree,
+    clock,
+    close: () => {
+      app.close();
+      server.close();
+    },
+  };
 }

@@ -21,7 +21,11 @@ export function createAi({
         headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.2, maxOutputTokens: 400, ...(json && { responseMimeType: 'application/json' }) },
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 400,
+            ...(json && { responseMimeType: 'application/json' }),
+          },
         }),
         signal: AbortSignal.timeout(timeoutMs),
       });
@@ -52,7 +56,12 @@ export function createAi({
         const parsed = JSON.parse(raw);
         const keywords = (Array.isArray(parsed.keywords) ? parsed.keywords : [])
           .filter((k) => typeof k === 'string')
-          .map((k) => k.toLowerCase().replace(/[^a-z0-9 +-]/g, '').trim())
+          .map((k) =>
+            k
+              .toLowerCase()
+              .replace(/[^a-z0-9 +-]/g, '')
+              .trim(),
+          )
           .filter((k) => k && k.length <= 30)
           .slice(0, 8);
         const category = categories.includes(parsed.category) ? parsed.category : null;

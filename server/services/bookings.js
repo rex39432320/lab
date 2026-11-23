@@ -40,7 +40,9 @@ export function createBooking(store, user, input, now, { flexible = false, viaWa
   };
   store.insert('bookings', booking);
   audit(store, user, viaWaitlist ? 'booking.promoted' : 'booking.created', booking.id, {
-    equipment: check.equipment.name, slot: slotText(booking), status: booking.status,
+    equipment: check.equipment.name,
+    slot: slotText(booking),
+    status: booking.status,
   });
   if (booking.status === 'pending') {
     for (const approverId of approversFor(check.equipment, check.project)) {
@@ -60,7 +62,11 @@ export function cancelBooking(store, actor, booking, now, reason = 'Cancelled by
   const equipment = store.get('equipment', booking.equipmentId);
   booking.status = 'cancelled';
   booking.cancelReason = reason;
-  audit(store, actor, 'booking.cancelled', booking.id, { equipment: equipment?.name, slot: slotText(booking), reason });
+  audit(store, actor, 'booking.cancelled', booking.id, {
+    equipment: equipment?.name,
+    slot: slotText(booking),
+    reason,
+  });
   store.touch();
   return promoteWaitlist(store, now, booking.equipmentId, booking.date);
 }
@@ -72,7 +78,10 @@ export function promoteWaitlist(store, now, equipmentId, date) {
     .filter((w) => w.status === 'waiting' && w.equipmentId === equipmentId && w.date === date)
     .map((w) => ({ w, user: store.get('users', w.userId) }))
     .filter((c) => c.user)
-    .map((c) => ({ ...c, score: priorityFor(store, c.user, store.get('projects', c.w.projectId), now).score }))
+    .map((c) => ({
+      ...c,
+      score: priorityFor(store, c.user, store.get('projects', c.w.projectId), now).score,
+    }))
     .sort((a, b) => b.score - a.score || a.w.createdAt - b.w.createdAt);
 
   for (const { w, user } of candidates) {
@@ -97,7 +106,8 @@ export function promoteWaitlist(store, now, equipmentId, date) {
 }
 
 export function assertCanCancel(user, booking) {
-  if (booking.userId !== user.id && user.role === 'student') throw forbidden('You can only cancel your own bookings.');
+  if (booking.userId !== user.id && user.role === 'student')
+    throw forbidden('You can only cancel your own bookings.');
 }
 
 /**
@@ -111,17 +121,28 @@ export function sweep(store, now) {
     if (b.status === 'pending' && (b.date < now.date || (b.date === now.date && b.startHour <= now.hour))) {
       b.status = 'expired';
       changed = true;
-      notify(store, b.userId, { type: 'booking', title: 'Booking request expired', body: `Nobody approved your request for ${slotText(b)} in time.`, link: '#/bookings' });
+      notify(store, b.userId, {
+        type: 'booking',
+        title: 'Booking request expired',
+        body: `Nobody approved your request for ${slotText(b)} in time.`,
+        link: '#/bookings',
+      });
     } else if (b.status === 'checked_in' && ended) {
       b.status = 'completed';
       changed = true;
     } else if (b.status === 'confirmed') {
-      const missed = b.date < now.date || (b.date === now.date && now.hour >= b.startHour + NO_SHOW_GRACE_HOURS);
+      const missed =
+        b.date < now.date || (b.date === now.date && now.hour >= b.startHour + NO_SHOW_GRACE_HOURS);
       if (!missed) continue;
       b.status = 'no_show';
       b.cancelReason = 'Not checked in';
       changed = true;
-      notify(store, b.userId, { type: 'booking', title: 'Slot released (no check-in)', body: `${slotText(b)} was released because you did not check in.`, link: '#/bookings' });
+      notify(store, b.userId, {
+        type: 'booking',
+        title: 'Slot released (no check-in)',
+        body: `${slotText(b)} was released because you did not check in.`,
+        link: '#/bookings',
+      });
       if (!ended) promoteWaitlist(store, now, b.equipmentId, b.date);
     }
   }

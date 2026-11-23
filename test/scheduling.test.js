@@ -2,7 +2,14 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { addDays, dayOfWeek, weekStart } from '../server/lib/time.js';
 import { priorityFor } from '../server/services/priority.js';
-import { findConflicts, freeWindows, overlaps, quotaFor, validateBooking, weekHours } from '../server/services/scheduling.js';
+import {
+  findConflicts,
+  freeWindows,
+  overlaps,
+  quotaFor,
+  validateBooking,
+  weekHours,
+} from '../server/services/scheduling.js';
 import { NOW, TUESDAY, createSeededStore } from './helpers.js';
 
 const store = createSeededStore();
@@ -27,12 +34,21 @@ describe('slot arithmetic', () => {
     const eq = store.get('equipment', 'eq-sa');
     const windows = freeWindows(store, eq, TUESDAY, NOW);
     for (const [a, b] of windows) assert.equal(findConflicts(store, eq.id, TUESDAY, a, b).length, 0);
-    assert.ok(windows.every(([a, b]) => !(a < 13 && 10 < b)), 'Vikram holds 10-13 on the spectrum analyzer');
+    assert.ok(
+      windows.every(([a, b]) => !(a < 13 && 10 < b)),
+      'Vikram holds 10-13 on the spectrum analyzer',
+    );
   });
 });
 
 describe('validateBooking', () => {
-  const base = { equipmentId: 'eq-dso', projectId: 'p-irrigation', date: addDays(NOW.date, 4), startHour: 10, endHour: 12 };
+  const base = {
+    equipmentId: 'eq-dso',
+    projectId: 'p-irrigation',
+    date: addDays(NOW.date, 4),
+    startHour: 10,
+    endHour: 12,
+  };
   const aarav = () => user('u-aarav');
 
   it('accepts a valid booking', () => {
@@ -42,37 +58,63 @@ describe('validateBooking', () => {
 
   it('rejects past slots', () => {
     assert.ok(codes(validateBooking(store, aarav(), { ...base, date: '2026-03-01' }, NOW)).includes('PAST'));
-    assert.ok(codes(validateBooking(store, aarav(), { ...base, date: NOW.date, startHour: 7, endHour: 9 }, NOW)).includes('PAST'));
+    assert.ok(
+      codes(
+        validateBooking(store, aarav(), { ...base, date: NOW.date, startHour: 7, endHour: 9 }, NOW),
+      ).includes('PAST'),
+    );
   });
 
   it('rejects Sundays and out-of-hours requests', () => {
-    assert.ok(codes(validateBooking(store, aarav(), { ...base, date: '2026-03-08' }, NOW)).includes('CLOSED'));
-    assert.ok(codes(validateBooking(store, aarav(), { ...base, startHour: 17, endHour: 19 }, NOW)).includes('CLOSED'));
+    assert.ok(
+      codes(validateBooking(store, aarav(), { ...base, date: '2026-03-08' }, NOW)).includes('CLOSED'),
+    );
+    assert.ok(
+      codes(validateBooking(store, aarav(), { ...base, startHour: 17, endHour: 19 }, NOW)).includes('CLOSED'),
+    );
   });
 
   it('enforces the per-booking maximum', () => {
-    assert.ok(codes(validateBooking(store, aarav(), { ...base, startHour: 9, endHour: 15 }, NOW)).includes('TOO_LONG'));
+    assert.ok(
+      codes(validateBooking(store, aarav(), { ...base, startHour: 9, endHour: 15 }, NOW)).includes(
+        'TOO_LONG',
+      ),
+    );
   });
 
   it('requires approved project access for restricted equipment', () => {
     const noAccess = validateBooking(store, user('u-aarav'), { ...base, equipmentId: 'eq-sa' }, NOW);
     assert.ok(codes(noAccess).includes('NO_ACCESS'));
-    const granted = validateBooking(store, user('u-arjun'), { ...base, equipmentId: 'eq-sa', projectId: 'p-5g', date: addDays(NOW.date, 5) }, NOW);
+    const granted = validateBooking(
+      store,
+      user('u-arjun'),
+      { ...base, equipmentId: 'eq-sa', projectId: 'p-5g', date: addDays(NOW.date, 5) },
+      NOW,
+    );
     assert.ok(!codes(granted).includes('NO_ACCESS'));
   });
 
   it('blocks a project the user does not belong to', () => {
-    assert.ok(codes(validateBooking(store, aarav(), { ...base, projectId: 'p-5g' }, NOW)).includes('PROJECT_INVALID'));
+    assert.ok(
+      codes(validateBooking(store, aarav(), { ...base, projectId: 'p-5g' }, NOW)).includes('PROJECT_INVALID'),
+    );
   });
 
   it('reports conflicts separately so alternatives can be offered', () => {
-    const result = validateBooking(store, user('u-arjun'), { equipmentId: 'eq-sa', projectId: 'p-5g', date: TUESDAY, startHour: 11, endHour: 13 }, NOW);
+    const result = validateBooking(
+      store,
+      user('u-arjun'),
+      { equipmentId: 'eq-sa', projectId: 'p-5g', date: TUESDAY, startHour: 11, endHour: 13 },
+      NOW,
+    );
     assert.deepEqual(codes(result), ['CONFLICT']);
     assert.equal(result.conflicts.length, 1);
   });
 
   it('blocks maintenance equipment', () => {
-    assert.ok(codes(validateBooking(store, aarav(), { ...base, equipmentId: 'eq-sla' }, NOW)).includes('MAINTENANCE'));
+    assert.ok(
+      codes(validateBooking(store, aarav(), { ...base, equipmentId: 'eq-sla' }, NOW)).includes('MAINTENANCE'),
+    );
   });
 
   it('flags long student bookings for approval', () => {
@@ -106,7 +148,10 @@ describe('priority scoring', () => {
 
   it('returns an explainable breakdown that sums to the score', () => {
     const result = priorityFor(store, user('u-isha'), store.get('projects', 'p-sorter'), NOW);
-    assert.equal(result.breakdown.reduce((s, f) => s + f.points, 0), result.score);
+    assert.equal(
+      result.breakdown.reduce((s, f) => s + f.points, 0),
+      result.score,
+    );
     assert.ok(result.breakdown.every((f) => f.label && f.note));
   });
 

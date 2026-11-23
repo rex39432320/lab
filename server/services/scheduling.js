@@ -23,7 +23,8 @@ export function findConflicts(store, equipmentId, date, startHour, endHour, igno
 }
 
 export const isOpenDay = (eq, date) => (eq.openDays ?? [1, 2, 3, 4, 5, 6]).includes(dayOfWeek(date));
-export const isPastSlot = (now, date, startHour) => date < now.date || (date === now.date && startHour < now.hour);
+export const isPastSlot = (now, date, startHour) =>
+  date < now.date || (date === now.date && startHour < now.hour);
 
 /** Contiguous bookable [start, end) windows for one equipment on one date. */
 export function freeWindows(store, eq, date, now, ignoreId) {
@@ -63,7 +64,9 @@ export function daySlots(store, eq, date, now, viewer) {
     if (eq.status !== 'available') slot.state = 'maintenance';
     else if (!open) slot.state = 'closed';
     else if (isPastSlot(now, date, hour)) slot.state = 'past';
-    const booking = bookingsFor(store, eq.id, date).find((b) => overlaps(b.startHour, b.endHour, hour, hour + 1));
+    const booking = bookingsFor(store, eq.id, date).find((b) =>
+      overlaps(b.startHour, b.endHour, hour, hour + 1),
+    );
     if (booking) {
       const mine = booking.userId === viewer.id;
       slot.state = slot.state === 'past' ? 'past-booked' : 'booked';
@@ -119,7 +122,12 @@ export function validateBooking(store, user, input, now, { ignoreBookingId, skip
   const warnings = [];
   const fail = (code, message) => errors.push({ code, message });
   const eq = store.get('equipment', input.equipmentId);
-  if (!eq) return { errors: [{ code: 'EQUIPMENT_NOT_FOUND', message: 'That equipment does not exist.' }], warnings, conflicts: [] };
+  if (!eq)
+    return {
+      errors: [{ code: 'EQUIPMENT_NOT_FOUND', message: 'That equipment does not exist.' }],
+      warnings,
+      conflicts: [],
+    };
 
   const { date, startHour, endHour } = input;
   const hours = endHour - startHour;
@@ -132,38 +140,55 @@ export function validateBooking(store, user, input, now, { ignoreBookingId, skip
     }
   }
 
-  if (eq.status !== 'available') fail('MAINTENANCE', `${eq.name} is currently ${eq.status} and cannot be booked.`);
+  if (eq.status !== 'available')
+    fail('MAINTENANCE', `${eq.name} is currently ${eq.status} and cannot be booked.`);
   else if (!isOpenDay(eq, date)) fail('CLOSED', `${eq.name} is not available on this day.`);
   else if (startHour < eq.openHour || endHour > eq.closeHour) {
     fail('CLOSED', `${eq.name} can be booked between ${eq.openHour}:00 and ${eq.closeHour}:00 only.`);
   }
   if (isPastSlot(now, date, startHour)) fail('PAST', 'That time has already started or passed.');
-  if (diffDays(date, now.date) > BOOKING_WINDOW_DAYS) fail('TOO_FAR', `You can book at most ${BOOKING_WINDOW_DAYS} days ahead.`);
-  if (hours > eq.maxHoursPerBooking) fail('TOO_LONG', `A single booking on this equipment is limited to ${eq.maxHoursPerBooking} hours.`);
+  if (diffDays(date, now.date) > BOOKING_WINDOW_DAYS)
+    fail('TOO_FAR', `You can book at most ${BOOKING_WINDOW_DAYS} days ahead.`);
+  if (hours > eq.maxHoursPerBooking)
+    fail('TOO_LONG', `A single booking on this equipment is limited to ${eq.maxHoursPerBooking} hours.`);
 
   const access = accessFor(store, user, eq, input.projectId, date);
   if (!access.ok) {
-    fail('NO_ACCESS', input.projectId
-      ? 'This equipment needs faculty-approved access for your project. Request access first.'
-      : 'This equipment needs a project with faculty-approved access. Select a project.');
+    fail(
+      'NO_ACCESS',
+      input.projectId
+        ? 'This equipment needs faculty-approved access for your project. Request access first.'
+        : 'This equipment needs a project with faculty-approved access. Select a project.',
+    );
   }
 
   if (user.role === 'student') {
     const quota = quotaFor(user, project, now);
     const used = weekHours(store, user.id, date, ignoreBookingId);
     if (used + hours > quota.limit) {
-      fail('QUOTA', `Weekly fair-use limit reached: ${used}/${quota.limit} h used this week, this booking adds ${hours} h.`);
+      fail(
+        'QUOTA',
+        `Weekly fair-use limit reached: ${used}/${quota.limit} h used this week, this booking adds ${hours} h.`,
+      );
     }
   }
 
   const overlapping = store.data.bookings.find(
-    (b) => b.userId === user.id && b.id !== ignoreBookingId && b.date === date && isActive(b) && overlaps(b.startHour, b.endHour, startHour, endHour),
+    (b) =>
+      b.userId === user.id &&
+      b.id !== ignoreBookingId &&
+      b.date === date &&
+      isActive(b) &&
+      overlaps(b.startHour, b.endHour, startHour, endHour),
   );
   if (overlapping) fail('SELF_OVERLAP', 'You already have another booking at this time.');
 
-  const conflicts = skipConflict ? [] : findConflicts(store, eq.id, date, startHour, endHour, ignoreBookingId);
+  const conflicts = skipConflict
+    ? []
+    : findConflicts(store, eq.id, date, startHour, endHour, ignoreBookingId);
   if (conflicts.length) fail('CONFLICT', 'Part of that window is already booked.');
-  if (project && date > project.deadline) warnings.push(`This is after your project deadline (${project.deadline}).`);
+  if (project && date > project.deadline)
+    warnings.push(`This is after your project deadline (${project.deadline}).`);
 
   const needsApproval = user.role === 'student' && hours > eq.autoApproveHours;
   if (needsApproval) warnings.push(`Bookings over ${eq.autoApproveHours} h need approval from your guide.`);

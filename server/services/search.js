@@ -7,10 +7,44 @@ const CONCEPTS = [
   ['wireless', 'wifi', 'bluetooth', 'rf', 'radio', 'antenna', '5g', 'sdr', 'iot', 'spectrum'],
   ['3d', 'printing', 'print', 'printer', 'prototype', 'additive', 'pla', 'resin'],
   ['robot', 'robotic', 'arm', 'automation', 'cobot', 'manipulator', 'ros', 'autonomous', 'navigation'],
-  ['ai', 'ml', 'machine', 'learning', 'deep', 'neural', 'gpu', 'cuda', 'inference', 'vision', 'training', 'edge'],
-  ['microscope', 'imaging', 'cell', 'cells', 'fluorescence', 'sem', 'afm', 'nanostructure', 'surface', 'nanoscale'],
+  [
+    'ai',
+    'ml',
+    'machine',
+    'learning',
+    'deep',
+    'neural',
+    'gpu',
+    'cuda',
+    'inference',
+    'vision',
+    'training',
+    'edge',
+  ],
+  [
+    'microscope',
+    'imaging',
+    'cell',
+    'cells',
+    'fluorescence',
+    'sem',
+    'afm',
+    'nanostructure',
+    'surface',
+    'nanoscale',
+  ],
   ['dna', 'pcr', 'gene', 'genetic', 'crispr', 'molecular', 'amplification', 'protein', 'gel'],
-  ['chemical', 'chemistry', 'spectroscopy', 'absorbance', 'chromatography', 'analysis', 'solvent', 'nanoparticle', 'uv'],
+  [
+    'chemical',
+    'chemistry',
+    'spectroscopy',
+    'absorbance',
+    'chromatography',
+    'analysis',
+    'solvent',
+    'nanoparticle',
+    'uv',
+  ],
   ['pcb', 'circuit', 'solder', 'soldering', 'rework', 'smd', 'assembly', 'milling'],
   ['laser', 'cutting', 'engraving', 'cnc', 'machining', 'fabrication', 'acrylic'],
   ['strength', 'tensile', 'stress', 'materials', 'compression', 'testing'],
@@ -25,22 +59,78 @@ const CONCEPTS = [
 ];
 
 const STOPWORDS = new Set([
-  'a', 'an', 'the', 'i', 'we', 'my', 'our', 'need', 'want', 'to', 'for', 'of', 'in', 'on', 'with', 'and', 'or',
-  'is', 'are', 'be', 'can', 'do', 'it', 'that', 'this', 'using', 'use', 'looking', 'find', 'me', 'some', 'any',
-  'project', 'something', 'equipment', 'lab', 'help', 'how', 'what', 'which', 'would', 'like', 'build', 'building',
-  'make', 'making', 'book', 'get', 'have', 'has', 'about', 'from', 'into', 'work', 'working',
+  'a',
+  'an',
+  'the',
+  'i',
+  'we',
+  'my',
+  'our',
+  'need',
+  'want',
+  'to',
+  'for',
+  'of',
+  'in',
+  'on',
+  'with',
+  'and',
+  'or',
+  'is',
+  'are',
+  'be',
+  'can',
+  'do',
+  'it',
+  'that',
+  'this',
+  'using',
+  'use',
+  'looking',
+  'find',
+  'me',
+  'some',
+  'any',
+  'project',
+  'something',
+  'equipment',
+  'lab',
+  'help',
+  'how',
+  'what',
+  'which',
+  'would',
+  'like',
+  'build',
+  'building',
+  'make',
+  'making',
+  'book',
+  'get',
+  'have',
+  'has',
+  'about',
+  'from',
+  'into',
+  'work',
+  'working',
 ]);
 
 export const tokenize = (text) =>
-  String(text).toLowerCase().split(/[^a-z0-9]+/).filter((t) => t && !STOPWORDS.has(t));
+  String(text)
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t && !STOPWORDS.has(t));
 
 const conceptIndex = new Map();
-for (const group of CONCEPTS) for (const word of group) conceptIndex.set(word, [...(conceptIndex.get(word) ?? []), group]);
+for (const group of CONCEPTS)
+  for (const word of group) conceptIndex.set(word, [...(conceptIndex.get(word) ?? []), group]);
 
 function expand(tokens) {
   const direct = new Set(tokens);
   const related = new Set();
-  for (const t of direct) for (const group of conceptIndex.get(t) ?? []) for (const w of group) if (!direct.has(w)) related.add(w);
+  for (const t of direct)
+    for (const group of conceptIndex.get(t) ?? []) for (const w of group) if (!direct.has(w)) related.add(w);
   return { direct, related };
 }
 
@@ -63,7 +153,10 @@ function scoreToken(idx, token, factor) {
     if (idx[field].has(token)) {
       score += weight * factor;
       hit = true;
-    } else if (token.length >= 4 && [...idx[field]].some((w) => w.startsWith(token) || (w.length >= 4 && token.startsWith(w)))) {
+    } else if (
+      token.length >= 4 &&
+      [...idx[field]].some((w) => w.startsWith(token) || (w.length >= 4 && token.startsWith(w)))
+    ) {
       score += weight * factor * 0.6;
       hit = true;
     }
@@ -94,7 +187,12 @@ export function searchEquipment(equipment, query, { extraKeywords = [], limit = 
       total += score;
       if (hit && matched.size < 6) matched.add(t);
     }
-    if (total >= minScore) results.push({ equipment: eq, score: Math.round(total * 100) / 100, matched: [...matched].slice(0, 5) });
+    if (total >= minScore)
+      results.push({
+        equipment: eq,
+        score: Math.round(total * 100) / 100,
+        matched: [...matched].slice(0, 5),
+      });
   }
   return results.sort((a, b) => b.score - a.score).slice(0, limit);
 }

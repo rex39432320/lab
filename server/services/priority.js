@@ -36,15 +36,21 @@ export function priorityFor(store, user, project, now, { ignoreBookingId } = {})
   const factors = {
     urgency: clamp(1 - Math.max(daysLeft, 0) / 21),
     fairness: isStudent ? clamp(1 - used / quota.limit) : 0.5,
-    importance: project ? KIND_IMPORTANCE[project.kind] ?? 0.5 : isStudent ? 0.35 : 0.9,
+    importance: project ? (KIND_IMPORTANCE[project.kind] ?? 0.5) : isStudent ? 0.35 : 0.9,
     starvation: clamp(daysSinceLastUse(store, user.id, now) / 14),
     goodwill: clamp((user.karma ?? 0) / 5),
   };
 
   const notes = {
-    urgency: project ? (daysLeft < 0 ? 'Deadline passed' : `Deadline in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`) : 'No project deadline',
+    urgency: project
+      ? daysLeft < 0
+        ? 'Deadline passed'
+        : `Deadline in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`
+      : 'No project deadline',
     fairness: isStudent ? `${used}/${quota.limit} h of weekly allowance used` : 'Faculty usage',
-    importance: project ? `${project.kind[0].toUpperCase()}${project.kind.slice(1)} project` : 'No project linked',
+    importance: project
+      ? `${project.kind[0].toUpperCase()}${project.kind.slice(1)} project`
+      : 'No project linked',
     starvation: `${daysSinceLastUse(store, user.id, now)} day(s) since last lab use`,
     goodwill: `${user.karma ?? 0} slot(s) generously released to others`,
   };

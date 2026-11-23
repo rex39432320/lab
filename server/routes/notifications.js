@@ -2,7 +2,9 @@ import { notFound } from '../lib/errors.js';
 
 export function registerNotifications(router, { store }) {
   router.get('/api/notifications', ({ user }) => {
-    const mine = store.data.notifications.filter((n) => n.userId === user.id).sort((a, b) => b.createdAt - a.createdAt);
+    const mine = store.data.notifications
+      .filter((n) => n.userId === user.id)
+      .sort((a, b) => b.createdAt - a.createdAt);
     return { items: mine.slice(0, 40), unread: mine.filter((n) => !n.read).length };
   });
 

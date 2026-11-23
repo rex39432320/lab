@@ -47,7 +47,13 @@ export function planSessions(store, user, params, now) {
     if (user.role === 'student' && used + hours > quota.limit) return;
     const startHour = pickWindow(freeWindows(store, eq, date, now), hours, params.preferred);
     if (startHour === null) return;
-    const slot = { equipmentId: eq.id, projectId: params.projectId, date, startHour, endHour: startHour + hours };
+    const slot = {
+      equipmentId: eq.id,
+      projectId: params.projectId,
+      date,
+      startHour,
+      endHour: startHour + hours,
+    };
     if (validateBooking(store, user, slot, now).errors.length) return;
     sessions.push(slot);
     plannedByWeek.set(ws, (plannedByWeek.get(ws) ?? 0) + hours);
@@ -59,7 +65,10 @@ export function planSessions(store, user, params, now) {
 
   const plannedHours = sessions.reduce((sum, s) => sum + (s.endHour - s.startHour), 0);
   const shortfall = params.hours - plannedHours;
-  if (shortfall > 0) notes.push(`Only ${plannedHours} of ${params.hours} h fit before ${prettyDate(horizonEnd)}. Consider a later deadline, similar equipment, or the waitlist.`);
+  if (shortfall > 0)
+    notes.push(
+      `Only ${plannedHours} of ${params.hours} h fit before ${prettyDate(horizonEnd)}. Consider a later deadline, similar equipment, or the waitlist.`,
+    );
   if (sessions.length) {
     const buffer = diffDays(params.deadline, sessions.at(-1).date);
     if (buffer >= 0) notes.push(`Your last session leaves a ${buffer}-day buffer before the deadline.`);

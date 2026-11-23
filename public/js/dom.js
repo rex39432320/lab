@@ -11,7 +11,8 @@ export function h(tag, props, ...children) {
     if (key === 'class') el.className = value;
     else if (key === 'dataset') Object.assign(el.dataset, value);
     else if (key === 'vars') for (const [name, v] of Object.entries(value)) el.style.setProperty(name, v);
-    else if (key.startsWith('on') && typeof value === 'function') el.addEventListener(key.slice(2).toLowerCase(), value);
+    else if (key.startsWith('on') && typeof value === 'function')
+      el.addEventListener(key.slice(2).toLowerCase(), value);
     else if (PROPS.has(key)) el[key] = value;
     else el.setAttribute(key, value === true ? '' : value);
   }
@@ -36,7 +37,8 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 export function svgEl(tag, attrs = {}, ...children) {
   const el = document.createElementNS(SVG_NS, tag);
   for (const [k, v] of Object.entries(attrs)) if (v !== undefined && v !== null) el.setAttribute(k, v);
-  for (const c of children.flat()) if (c) el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  for (const c of children.flat())
+    if (c) el.append(c instanceof Node ? c : document.createTextNode(String(c)));
   return el;
 }
 

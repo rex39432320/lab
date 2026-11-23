@@ -27,7 +27,17 @@ export function createShell({ onSignOut }) {
   const host = h('div', { id: 'main', tabindex: '-1' });
   const scrim = h('div', { class: 'scrim', hidden: true, onclick: () => setOpen(false) });
   const bellWrap = h('div', { class: 'relative' });
-  const menuBtn = h('button', { class: 'btn btn--icon btn--ghost menu-btn', 'aria-label': 'Open navigation', 'aria-controls': 'sidebar', 'aria-expanded': 'false', onclick: () => setOpen(true) }, icon('menu'));
+  const menuBtn = h(
+    'button',
+    {
+      class: 'btn btn--icon btn--ghost menu-btn',
+      'aria-label': 'Open navigation',
+      'aria-controls': 'sidebar',
+      'aria-expanded': 'false',
+      onclick: () => setOpen(true),
+    },
+    icon('menu'),
+  );
 
   function setOpen(open) {
     sidebar.dataset.open = String(open);
@@ -43,25 +53,61 @@ export function createShell({ onSignOut }) {
     const items = NAV.filter((n) => !n.roles || n.roles.includes(role)).map((n) => {
       if (n.section) return h('div', { class: 'nav__label' }, n.section);
       const count = n.count ? counts[n.count] : 0;
-      const link = h('a', { class: 'nav__link', href: `#${n.to}`, onclick: () => setOpen(false) }, icon(n.icon), n.label,
-        count > 0 && h('span', { class: 'nav__badge', 'aria-label': `${count} pending` }, count));
+      const link = h(
+        'a',
+        { class: 'nav__link', href: `#${n.to}`, onclick: () => setOpen(false) },
+        icon(n.icon),
+        n.label,
+        count > 0 && h('span', { class: 'nav__badge', 'aria-label': `${count} pending` }, count),
+      );
       navLinks.set(n.to, link);
       return link;
     });
-    replace(sidebar,
-      h('a', { class: 'brand', href: '#/', 'aria-label': 'LabLink home' },
+    replace(
+      sidebar,
+      h(
+        'a',
+        { class: 'brand', href: '#/', 'aria-label': 'LabLink home' },
         h('span', { class: 'brand__mark' }, icon('target', { size: 22 })),
-        h('span', null, h('span', { class: 'brand__name' }, 'LabLink'), h('span', { class: 'brand__tag' }, 'Campus lab sharing'))),
+        h(
+          'span',
+          null,
+          h('span', { class: 'brand__name' }, 'LabLink'),
+          h('span', { class: 'brand__tag' }, 'Campus lab sharing'),
+        ),
+      ),
       h('nav', { class: 'nav', 'aria-label': 'Main' }, items),
-      h('div', { class: 'sidebar__foot' },
-        h('div', { class: 'user-chip' }, avatar(state.user.name),
-          h('div', { class: 'user-chip__meta' }, h('div', { class: 'user-chip__name' }, state.user.name), h('div', { class: 'user-chip__role' }, `${state.user.role} · ${state.user.department}`))),
-        h('button', { class: 'btn btn--ghost btn--sm btn--block', onclick: onSignOut }, icon('logout', { size: 16 }), 'Sign out')));
+      h(
+        'div',
+        { class: 'sidebar__foot' },
+        h(
+          'div',
+          { class: 'user-chip' },
+          avatar(state.user.name),
+          h(
+            'div',
+            { class: 'user-chip__meta' },
+            h('div', { class: 'user-chip__name' }, state.user.name),
+            h('div', { class: 'user-chip__role' }, `${state.user.role} · ${state.user.department}`),
+          ),
+        ),
+        h(
+          'button',
+          { class: 'btn btn--ghost btn--sm btn--block', onclick: onSignOut },
+          icon('logout', { size: 16 }),
+          'Sign out',
+        ),
+      ),
+    );
   }
 
   function setActive(path) {
-    const key = [...navLinks.keys()].filter((k) => k === '/' ? path === '/' : path === k || path.startsWith(`${k}/`)).sort((a, b) => b.length - a.length)[0];
-    navLinks.forEach((link, to) => (to === key ? link.setAttribute('aria-current', 'page') : link.removeAttribute('aria-current')));
+    const key = [...navLinks.keys()]
+      .filter((k) => (k === '/' ? path === '/' : path === k || path.startsWith(`${k}/`)))
+      .sort((a, b) => b.length - a.length)[0];
+    navLinks.forEach((link, to) =>
+      to === key ? link.setAttribute('aria-current', 'page') : link.removeAttribute('aria-current'),
+    );
     setOpen(false);
   }
 
@@ -75,20 +121,38 @@ export function createShell({ onSignOut }) {
   function toggleTheme() {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
-    try { localStorage.setItem('lablink-theme', next); } catch { /* ignore */ }
+    try {
+      localStorage.setItem('lablink-theme', next);
+    } catch {
+      /* ignore */
+    }
     paintTheme();
   }
 
   // ---- Notifications ----
   let popover = null;
-  const bell = h('button', { class: 'btn btn--icon btn--ghost relative', 'aria-haspopup': 'true', 'aria-expanded': 'false', onclick: togglePopover });
+  const bell = h('button', {
+    class: 'btn btn--icon btn--ghost relative',
+    'aria-haspopup': 'true',
+    'aria-expanded': 'false',
+    onclick: togglePopover,
+  });
   function paintBell() {
-    replace(bell, icon('bell'), state.unread > 0 && h('span', { class: 'bell-dot', 'aria-hidden': 'true' }, state.unread > 9 ? '9+' : state.unread));
+    replace(
+      bell,
+      icon('bell'),
+      state.unread > 0 &&
+        h('span', { class: 'bell-dot', 'aria-hidden': 'true' }, state.unread > 9 ? '9+' : state.unread),
+    );
     bell.setAttribute('aria-label', state.unread ? `Notifications, ${state.unread} unread` : 'Notifications');
   }
   async function togglePopover() {
     if (popover) return closePopover();
-    popover = h('div', { class: 'popover', role: 'region', 'aria-label': 'Notifications' }, h('p', { class: 'muted small' }, 'Loading…'));
+    popover = h(
+      'div',
+      { class: 'popover', role: 'region', 'aria-label': 'Notifications' },
+      h('p', { class: 'muted small' }, 'Loading…'),
+    );
     bellWrap.append(popover);
     bell.setAttribute('aria-expanded', 'true');
     document.addEventListener('mousedown', outside, true);
@@ -96,20 +160,46 @@ export function createShell({ onSignOut }) {
     try {
       const { items, unread } = await api.get('/api/notifications');
       update({ unread });
-      replace(popover,
-        h('div', { class: 'row' }, h('strong', null, 'Notifications'), h('span', { class: 'spacer' }),
-          unread > 0 && h('button', { class: 'btn btn--ghost btn--sm', onclick: markAll }, 'Mark all read')),
-        items.length ? h('div', { class: 'stack--sm stack' }, items.map(notificationRow)) : emptyState({ iconName: 'bell', title: 'All caught up', text: 'New activity will show up here.' }));
+      replace(
+        popover,
+        h(
+          'div',
+          { class: 'row' },
+          h('strong', null, 'Notifications'),
+          h('span', { class: 'spacer' }),
+          unread > 0 && h('button', { class: 'btn btn--ghost btn--sm', onclick: markAll }, 'Mark all read'),
+        ),
+        items.length
+          ? h('div', { class: 'stack--sm stack' }, items.map(notificationRow))
+          : emptyState({ iconName: 'bell', title: 'All caught up', text: 'New activity will show up here.' }),
+      );
     } catch (err) {
       replace(popover, h('p', { class: 'error-text' }, err.message));
     }
   }
   function notificationRow(n) {
-    return h('a', {
-      class: `notif ${n.read ? '' : 'notif--unread'}`, href: n.link || '#/',
-      onclick: async () => { closePopover(); if (!n.read) { await api.post(`/api/notifications/${n.id}/read`).catch(() => {}); refresh(); } },
-    }, !n.read && h('span', { class: 'notif__dot', 'aria-label': 'Unread' }), h('div', null,
-      h('div', { class: 'strong small' }, n.title), n.body && h('div', { class: 'small muted' }, n.body), h('div', { class: 'xs faint' }, timeAgo(n.createdAt))));
+    return h(
+      'a',
+      {
+        class: `notif ${n.read ? '' : 'notif--unread'}`,
+        href: n.link || '#/',
+        onclick: async () => {
+          closePopover();
+          if (!n.read) {
+            await api.post(`/api/notifications/${n.id}/read`).catch(() => {});
+            refresh();
+          }
+        },
+      },
+      !n.read && h('span', { class: 'notif__dot', 'aria-label': 'Unread' }),
+      h(
+        'div',
+        null,
+        h('div', { class: 'strong small' }, n.title),
+        n.body && h('div', { class: 'small muted' }, n.body),
+        h('div', { class: 'xs faint' }, timeAgo(n.createdAt)),
+      ),
+    );
   }
   async function markAll() {
     await api.post('/api/notifications/read-all');
@@ -117,8 +207,15 @@ export function createShell({ onSignOut }) {
     closePopover();
     paintBell();
   }
-  function outside(e) { if (popover && !bellWrap.contains(e.target)) closePopover(); }
-  function escape(e) { if (e.key === 'Escape') { closePopover(); bell.focus(); } }
+  function outside(e) {
+    if (popover && !bellWrap.contains(e.target)) closePopover();
+  }
+  function escape(e) {
+    if (e.key === 'Escape') {
+      closePopover();
+      bell.focus();
+    }
+  }
   function closePopover() {
     popover?.remove();
     popover = null;
@@ -137,30 +234,65 @@ export function createShell({ onSignOut }) {
       renderNav();
       setActive(path);
       paintBell();
-    } catch { /* polling is best-effort */ }
+    } catch {
+      /* polling is best-effort */
+    }
   }
 
-  const search = h('form', { class: 'topbar__search', role: 'search', onsubmit: (e) => {
-    e.preventDefault();
-    const q = new FormData(e.currentTarget).get('q').toString().trim();
-    go(q ? `/discover?q=${encodeURIComponent(q)}` : '/discover');
-  } },
-  icon('search', { size: 18 }),
-  h('label', { class: 'sr-only', for: 'global-search' }, 'Search equipment'),
-  h('input', { class: 'input', id: 'global-search', name: 'q', type: 'search', placeholder: 'Describe what you need, e.g. “capture sensor signals”', autocomplete: 'off', maxlength: '200' }));
+  const search = h(
+    'form',
+    {
+      class: 'topbar__search',
+      role: 'search',
+      onsubmit: (e) => {
+        e.preventDefault();
+        const q = new FormData(e.currentTarget).get('q').toString().trim();
+        go(q ? `/discover?q=${encodeURIComponent(q)}` : '/discover');
+      },
+    },
+    icon('search', { size: 18 }),
+    h('label', { class: 'sr-only', for: 'global-search' }, 'Search equipment'),
+    h('input', {
+      class: 'input',
+      id: 'global-search',
+      name: 'q',
+      type: 'search',
+      placeholder: 'Describe what you need, e.g. “capture sensor signals”',
+      autocomplete: 'off',
+      maxlength: '200',
+    }),
+  );
 
   renderNav();
   paintTheme();
   paintBell();
   bellWrap.append(bell);
 
-  const el = h('div', { class: 'app' }, sidebar, scrim,
-    h('div', { class: 'main' },
-      h('header', { class: 'topbar' }, menuBtn, search, h('span', { class: 'spacer' }),
-        badge(state.mode === 'gemini' ? 'Gemini AI' : 'Local AI engine', 'violet', 'sparkles'), themeBtn, bellWrap),
-      h('main', { id: 'main-content' }, host)));
+  const el = h(
+    'div',
+    { class: 'app' },
+    sidebar,
+    scrim,
+    h(
+      'div',
+      { class: 'main' },
+      h(
+        'header',
+        { class: 'topbar' },
+        menuBtn,
+        search,
+        h('span', { class: 'spacer' }),
+        badge(state.mode === 'gemini' ? 'Gemini AI' : 'Local AI engine', 'violet', 'sparkles'),
+        themeBtn,
+        bellWrap,
+      ),
+      h('main', { id: 'main-content' }, host),
+    ),
+  );
 
-  const timer = setInterval(() => { if (!document.hidden) refresh(); }, 60_000);
+  const timer = setInterval(() => {
+    if (!document.hidden) refresh();
+  }, 60_000);
   refresh();
   return { el, host, setActive, refresh, destroy: () => clearInterval(timer) };
 }

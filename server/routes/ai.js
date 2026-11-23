@@ -3,7 +3,11 @@ import { v } from '../lib/validate.js';
 import { answerChat } from '../services/chat.js';
 
 export function registerAi(router, { store, ai, limiter }) {
-  router.get('/api/ai/status', () => ({ enabled: ai.enabled, model: ai.model, mode: ai.enabled ? 'gemini' : 'local' }));
+  router.get('/api/ai/status', () => ({
+    enabled: ai.enabled,
+    model: ai.model,
+    mode: ai.enabled ? 'gemini' : 'local',
+  }));
 
   router.post('/api/ai/chat', async ({ body, user, now }) => {
     const hit = limiter.hit(`chat:${user.id}`, 30, 60_000);

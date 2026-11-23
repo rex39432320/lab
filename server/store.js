@@ -4,8 +4,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const COLLECTIONS = [
-  'users', 'equipment', 'projects', 'accessRequests', 'bookings',
-  'waitlist', 'swaps', 'notifications', 'audit',
+  'users',
+  'equipment',
+  'projects',
+  'accessRequests',
+  'bookings',
+  'waitlist',
+  'swaps',
+  'notifications',
+  'audit',
 ];
 
 export class Store {

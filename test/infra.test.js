@@ -26,7 +26,11 @@ describe('store persistence', () => {
     fs.writeFileSync(file, '{not json');
     const originalError = console.error;
     console.error = () => {};
-    try { assert.equal(new Store({ file }).load(), false); } finally { console.error = originalError; }
+    try {
+      assert.equal(new Store({ file }).load(), false);
+    } finally {
+      console.error = originalError;
+    }
   });
 });
 
@@ -81,7 +85,9 @@ describe('analytics service', () => {
 
 describe('static serving', () => {
   let s;
-  before(async () => { s = await startServer(); });
+  before(async () => {
+    s = await startServer();
+  });
   after(() => s.close());
 
   it('serves the app shell with revalidation and gzip', async () => {
@@ -110,6 +116,8 @@ describe('static serving', () => {
     const off = await startServer({ config: { demoMode: false } });
     try {
       assert.deepEqual((await off.request('GET', '/api/auth/demo')).body, { accounts: [] });
-    } finally { off.close(); }
+    } finally {
+      off.close();
+    }
   });
 });

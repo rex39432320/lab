@@ -37,7 +37,15 @@ function showLogin() {
   shell?.destroy();
   shell = null;
   document.title = 'Sign in · LabLink';
-  replace(root, loginView({ onSignedIn: () => { location.hash = '#/'; render(); } }));
+  replace(
+    root,
+    loginView({
+      onSignedIn: () => {
+        location.hash = '#/';
+        render();
+      },
+    }),
+  );
 }
 
 async function signOut() {
@@ -67,10 +75,35 @@ async function render() {
     window.scrollTo({ top: 0 });
   };
 
-  if (!match) return show(h('div', { class: 'page' }, emptyState({ iconName: 'search', title: 'Page not found', text: 'That page does not exist.', action: h('a', { class: 'btn btn--primary', href: '#/' }, 'Back to dashboard') })), 'Not found');
+  if (!match)
+    return show(
+      h(
+        'div',
+        { class: 'page' },
+        emptyState({
+          iconName: 'search',
+          title: 'Page not found',
+          text: 'That page does not exist.',
+          action: h('a', { class: 'btn btn--primary', href: '#/' }, 'Back to dashboard'),
+        }),
+      ),
+      'Not found',
+    );
   const { route, params } = match;
   if (route.options.roles && !route.options.roles.includes(state.user.role)) {
-    return show(h('div', { class: 'page' }, emptyState({ iconName: 'lock', title: 'Staff only', text: 'You do not have access to this area.', action: h('a', { class: 'btn btn--primary', href: '#/' }, 'Back to dashboard') })), 'No access');
+    return show(
+      h(
+        'div',
+        { class: 'page' },
+        emptyState({
+          iconName: 'lock',
+          title: 'Staff only',
+          text: 'You do not have access to this area.',
+          action: h('a', { class: 'btn btn--primary', href: '#/' }, 'Back to dashboard'),
+        }),
+      ),
+      'No access',
+    );
   }
 
   replace(shell.host, h('div', { class: 'page', 'aria-busy': 'true' }, skeletonGrid(3)));
@@ -83,17 +116,30 @@ async function render() {
 }
 
 async function boot() {
-  $('.skip-link').addEventListener('click', (e) => { e.preventDefault(); ($('.page__title') ?? $('#main'))?.focus(); });
+  $('.skip-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    ($('.page__title') ?? $('#main'))?.focus();
+  });
   try {
     const [meta, me] = await Promise.all([api.get('/api/meta'), api.get('/api/auth/me')]);
     update({ meta, user: me.user, unread: me.unread, mode: meta.ai.enabled ? 'gemini' : 'local' });
   } catch (err) {
-    replace(root, h('div', { class: 'page' }, errorState(err, () => location.reload())));
+    replace(
+      root,
+      h(
+        'div',
+        { class: 'page' },
+        errorState(err, () => location.reload()),
+      ),
+    );
     return;
   }
   window.addEventListener('hashchange', render);
   window.addEventListener('app:refresh', render);
-  window.addEventListener('auth:expired', () => { update({ user: null }); showLogin(); });
+  window.addEventListener('auth:expired', () => {
+    update({ user: null });
+    showLogin();
+  });
   render();
 }
 

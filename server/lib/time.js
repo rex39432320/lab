@@ -31,13 +31,15 @@ export const diffDays = (a, b) => Math.round((parseDate(a) - parseDate(b)) / DAY
 export const dayOfWeek = (d) => new Date(parseDate(d)).getUTCDay();
 /** Monday of the week containing `d`. */
 export const weekStart = (d) => addDays(d, -((dayOfWeek(d) + 6) % 7));
-export const isValidDate = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && formatDate(parseDate(s)) === s;
+export const isValidDate = (s) =>
+  typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && formatDate(parseDate(s)) === s;
 
 export const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** e.g. 'Tue 24 Nov' */
-export const prettyDate = (d) => `${DAY_NAMES[dayOfWeek(d)].slice(0, 3)} ${+d.slice(8, 10)} ${MONTH_NAMES[+d.slice(5, 7) - 1]}`;
+export const prettyDate = (d) =>
+  `${DAY_NAMES[dayOfWeek(d)].slice(0, 3)} ${+d.slice(8, 10)} ${MONTH_NAMES[+d.slice(5, 7) - 1]}`;
 
 export function hourLabel(h) {
   const whole = Math.floor(h);

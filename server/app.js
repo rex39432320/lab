@@ -30,7 +30,8 @@ function readJson(req) {
     });
     req.on('end', () => {
       if (!size) return resolve({});
-      if (!/^application\/json\b/i.test(req.headers['content-type'] ?? '')) return reject(new HttpError(415, 'Send JSON with Content-Type: application/json.'));
+      if (!/^application\/json\b/i.test(req.headers['content-type'] ?? ''))
+        return reject(new HttpError(415, 'Send JSON with Content-Type: application/json.'));
       try {
         resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')));
       } catch {
@@ -44,7 +45,10 @@ function readJson(req) {
 function send(res, status, payload, headers = {}) {
   const body = JSON.stringify(payload);
   res.writeHead(status, {
-    'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Content-Length': Buffer.byteLength(body), ...headers,
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'Content-Length': Buffer.byteLength(body),
+    ...headers,
   });
   res.end(body);
 }
@@ -73,7 +77,8 @@ export function createApp({ store, ai = createAi(), clock = () => campusNow(), c
     if (cfg.trustProxy && forwarded) return String(forwarded).split(',').at(-1).trim();
     return req.socket.remoteAddress ?? 'unknown';
   };
-  const isHttps = (req) => Boolean(req.socket.encrypted) || (cfg.trustProxy && req.headers['x-forwarded-proto'] === 'https');
+  const isHttps = (req) =>
+    Boolean(req.socket.encrypted) || (cfg.trustProxy && req.headers['x-forwarded-proto'] === 'https');
 
   function authenticate(req) {
     const token = parseCookies(req.headers.cookie)[SESSION_COOKIE];
@@ -95,8 +100,10 @@ export function createApp({ store, ai = createAi(), clock = () => campusNow(), c
     authorize(matched.route.options, user);
     const mutating = !['GET', 'HEAD'].includes(req.method);
     // Custom header + SameSite=Strict cookies defend against CSRF.
-    if (mutating && req.headers['x-requested-with'] !== 'lablink') throw forbidden('Missing required request header.');
-    if (Number(req.headers['content-length']) > MAX_BODY_BYTES) throw new HttpError(413, 'Request body is too large.');
+    if (mutating && req.headers['x-requested-with'] !== 'lablink')
+      throw forbidden('Missing required request header.');
+    if (Number(req.headers['content-length']) > MAX_BODY_BYTES)
+      throw new HttpError(413, 'Request body is too large.');
     const body = mutating ? await readJson(req) : {};
 
     const nowMs = Date.now();
@@ -106,7 +113,14 @@ export function createApp({ store, ai = createAi(), clock = () => campusNow(), c
     }
 
     const result = await matched.route.handler({
-      req, user, body, ip, secure: isHttps(req), now: clock(), params: matched.params, query: Object.fromEntries(url.searchParams),
+      req,
+      user,
+      body,
+      ip,
+      secure: isHttps(req),
+      now: clock(),
+      params: matched.params,
+      query: Object.fromEntries(url.searchParams),
     });
     if (result instanceof Reply) {
       if (result.raw) {

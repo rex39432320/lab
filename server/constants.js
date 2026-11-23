@@ -24,7 +24,20 @@ export const PROJECT_KINDS = ['capstone', 'research', 'course', 'personal'];
 export const EQUIPMENT_STATUSES = ['available', 'maintenance'];
 export const DEMO_PASSWORD = 'LabLink@2026';
 export const ICONS = [
-  'oscilloscope', 'wave', 'radio', 'wrench', 'chip', 'server', 'vr', 'printer', 'laser',
-  'scale', 'robot', 'drone', 'flask', 'dna', 'microscope',
+  'oscilloscope',
+  'wave',
+  'radio',
+  'wrench',
+  'chip',
+  'server',
+  'vr',
+  'printer',
+  'laser',
+  'scale',
+  'robot',
+  'drone',
+  'flask',
+  'dna',
+  'microscope',
 ];
 export const SESSION_COOKIE = 'll_session';

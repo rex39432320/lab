@@ -5,7 +5,9 @@ import { weekHours } from '../server/services/scheduling.js';
 import { NOW, TUESDAY, WEDNESDAY, startServer } from './helpers.js';
 
 let s;
-before(async () => { s = await startServer(); });
+before(async () => {
+  s = await startServer();
+});
 after(() => s.close());
 
 describe('authentication & authorization', () => {
@@ -15,15 +17,21 @@ describe('authentication & authorization', () => {
   });
 
   it('rejects wrong passwords with a generic message', async () => {
-    const res = await s.request('POST', '/api/auth/login', { body: { email: 'aarav@lablink.edu', password: 'nope-nope' } });
+    const res = await s.request('POST', '/api/auth/login', {
+      body: { email: 'aarav@lablink.edu', password: 'nope-nope' },
+    });
     assert.equal(res.status, 401);
     assert.equal(res.body.error, 'Incorrect email or password.');
-    const unknown = await s.request('POST', '/api/auth/login', { body: { email: 'ghost@lablink.edu', password: 'nope-nope' } });
+    const unknown = await s.request('POST', '/api/auth/login', {
+      body: { email: 'ghost@lablink.edu', password: 'nope-nope' },
+    });
     assert.equal(unknown.body.error, res.body.error, 'must not reveal which emails exist');
   });
 
   it('sets an HttpOnly, SameSite=Strict session cookie', async () => {
-    const res = await s.request('POST', '/api/auth/login', { body: { email: 'aarav@lablink.edu', password: 'LabLink@2026' } });
+    const res = await s.request('POST', '/api/auth/login', {
+      body: { email: 'aarav@lablink.edu', password: 'LabLink@2026' },
+    });
     const cookie = res.headers.get('set-cookie');
     assert.match(cookie, /HttpOnly/);
     assert.match(cookie, /SameSite=Strict/);
@@ -31,12 +39,18 @@ describe('authentication & authorization', () => {
   });
 
   it('requires the CSRF header on mutating requests', async () => {
-    const res = await fetch(`${s.base}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const res = await fetch(`${s.base}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    });
     assert.equal(res.status, 403);
   });
 
   it('rejects tampered session cookies', async () => {
-    const res = await s.request('GET', '/api/auth/me', { cookie: 'll_session=eyJ1aWQiOiJ1LWFkbWluIiwiZXhwIjo5OTk5OTk5OTk5OTk5fQ.forged' });
+    const res = await s.request('GET', '/api/auth/me', {
+      cookie: 'll_session=eyJ1aWQiOiJ1LWFkbWluIiwiZXhwIjo5OTk5OTk5OTk5OTk5fQ.forged',
+    });
     assert.equal(res.body.user, null);
   });
 
@@ -50,18 +64,27 @@ describe('authentication & authorization', () => {
 
   it('rate limits repeated failed sign-ins', async () => {
     let last;
-    for (let i = 0; i < 10; i++) last = await s.request('POST', '/api/auth/login', { body: { email: 'zoya@lablink.edu', password: 'wrong-pass-1' } });
+    for (let i = 0; i < 10; i++)
+      last = await s.request('POST', '/api/auth/login', {
+        body: { email: 'zoya@lablink.edu', password: 'wrong-pass-1' },
+      });
     assert.equal(last.status, 429);
     assert.ok(last.headers.get('retry-after'));
   });
 
   it('registers a new student with password rules', async () => {
-    const weak = await s.request('POST', '/api/auth/register', { body: { name: 'New Student', email: 'new@lablink.edu', department: 'ECE', password: 'onlyletters' } });
+    const weak = await s.request('POST', '/api/auth/register', {
+      body: { name: 'New Student', email: 'new@lablink.edu', department: 'ECE', password: 'onlyletters' },
+    });
     assert.equal(weak.status, 400);
-    const ok = await s.request('POST', '/api/auth/register', { body: { name: 'New Student', email: 'new@lablink.edu', department: 'ECE', password: 'Sturdy-pass1' } });
+    const ok = await s.request('POST', '/api/auth/register', {
+      body: { name: 'New Student', email: 'new@lablink.edu', department: 'ECE', password: 'Sturdy-pass1' },
+    });
     assert.equal(ok.status, 201);
     assert.equal(ok.body.user.role, 'student');
-    const dup = await s.request('POST', '/api/auth/register', { body: { name: 'New Student', email: 'new@lablink.edu', department: 'ECE', password: 'Sturdy-pass1' } });
+    const dup = await s.request('POST', '/api/auth/register', {
+      body: { name: 'New Student', email: 'new@lablink.edu', department: 'ECE', password: 'Sturdy-pass1' },
+    });
     assert.equal(dup.status, 409);
   });
 });
@@ -69,16 +92,35 @@ describe('authentication & authorization', () => {
 describe('input validation & hardening', () => {
   it('returns 400 with the field name for bad input', async () => {
     const c = await s.login('isha@lablink.edu');
-    const res = await c.post('/api/bookings', { equipmentId: 'eq-dso', date: 'tomorrow', startHour: 10, endHour: 11 });
+    const res = await c.post('/api/bookings', {
+      equipmentId: 'eq-dso',
+      date: 'tomorrow',
+      startHour: 10,
+      endHour: 11,
+    });
     assert.equal(res.status, 400);
     assert.equal(res.body.details.field, 'date');
-    assert.equal((await c.post('/api/bookings', { equipmentId: 'eq-dso', date: TUESDAY, startHour: 12, endHour: 10 })).status, 400);
+    assert.equal(
+      (await c.post('/api/bookings', { equipmentId: 'eq-dso', date: TUESDAY, startHour: 12, endHour: 10 }))
+        .status,
+      400,
+    );
   });
 
   it('rejects non-JSON bodies and oversized payloads', async () => {
     const c = await s.login('isha@lablink.edu');
-    const cookie = (await s.request('POST', '/api/auth/login', { body: { email: 'isha@lablink.edu', password: 'LabLink@2026' } })).headers.get('set-cookie').split(';')[0];
-    const bad = await fetch(`${s.base}/api/bookings/check`, { method: 'POST', headers: { 'X-Requested-With': 'lablink', 'Content-Type': 'text/plain', Cookie: cookie }, body: 'hello' });
+    const cookie = (
+      await s.request('POST', '/api/auth/login', {
+        body: { email: 'isha@lablink.edu', password: 'LabLink@2026' },
+      })
+    ).headers
+      .get('set-cookie')
+      .split(';')[0];
+    const bad = await fetch(`${s.base}/api/bookings/check`, {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'lablink', 'Content-Type': 'text/plain', Cookie: cookie },
+      body: 'hello',
+    });
     assert.equal(bad.status, 415);
     const big = await c.post('/api/bookings/check', { padding: 'x'.repeat(70_000) });
     assert.equal(big.status, 413);
@@ -155,7 +197,7 @@ describe('booking lifecycle', () => {
     assert.equal((await vikram.get('/api/waitlist')).body.items.length, 0);
   });
 
-  it('stops users cancelling other people\'s bookings', async () => {
+  it("stops users cancelling other people's bookings", async () => {
     const aarav = await s.login('aarav@lablink.edu');
     const priya = await s.login('priya@lablink.edu');
     const slot = { ...s.findFree('eq-esp32', 1, 7, 'u-aarav'), projectId: 'p-irrigation' };
@@ -170,7 +212,11 @@ describe('booking lifecycle', () => {
     s.store.get('users', 'u-diya').weeklyQuota = weekHours(s.store, 'u-diya', slot.date) + 2;
     const first = await diya.post('/api/bookings', { ...slot, endHour: slot.startHour + 2 });
     assert.equal(first.status, 201);
-    const over = await diya.post('/api/bookings', { ...slot, startHour: slot.startHour + 2, endHour: slot.startHour + 3 });
+    const over = await diya.post('/api/bookings', {
+      ...slot,
+      startHour: slot.startHour + 2,
+      endHour: slot.startHour + 3,
+    });
     assert.equal(over.status, 422);
     assert.match(over.body.error, /fair-use/);
   });
@@ -184,11 +230,22 @@ describe('booking lifecycle', () => {
     const rao = await s.login('rao@lablink.edu');
     const inbox = await rao.get('/api/approvals');
     assert.ok(inbox.body.bookings.some((b) => b.id === made.body.booking.id));
-    const approved = await rao.post(`/api/bookings/${made.body.booking.id}/decision`, { decision: 'approve', comment: 'Go ahead' });
+    const approved = await rao.post(`/api/bookings/${made.body.booking.id}/decision`, {
+      decision: 'approve',
+      comment: 'Go ahead',
+    });
     assert.equal(approved.body.booking.status, 'confirmed');
     const menon = await s.login('menon@lablink.edu');
-    assert.equal((await menon.post(`/api/bookings/${made.body.booking.id}/decision`, { decision: 'approve' })).status, 403, 'not an approver');
-    assert.equal((await rao.post(`/api/bookings/${made.body.booking.id}/decision`, { decision: 'approve' })).status, 400, 'already decided');
+    assert.equal(
+      (await menon.post(`/api/bookings/${made.body.booking.id}/decision`, { decision: 'approve' })).status,
+      403,
+      'not an approver',
+    );
+    assert.equal(
+      (await rao.post(`/api/bookings/${made.body.booking.id}/decision`, { decision: 'approve' })).status,
+      400,
+      'already decided',
+    );
   });
 
   it('commits multi-session plans atomically', async () => {
@@ -224,11 +281,23 @@ describe('project-based access approval', () => {
     assert.equal(before.body.details.errors[0].code, 'NO_ACCESS');
 
     const rao = await s.login('rao@lablink.edu');
-    const pending = (await rao.get('/api/approvals')).body.accessRequests.find((r) => r.equipmentId === 'eq-pcbmill');
+    const pending = (await rao.get('/api/approvals')).body.accessRequests.find(
+      (r) => r.equipmentId === 'eq-pcbmill',
+    );
     assert.ok(pending, 'the seeded pending request is in the faculty inbox');
-    const wrongFaculty = await (await s.login('das@lablink.edu')).post(`/api/access-requests/${pending.id}/decision`, { decision: 'approve' });
+    const wrongFaculty = await (
+      await s.login('das@lablink.edu')
+    ).post(`/api/access-requests/${pending.id}/decision`, { decision: 'approve' });
     assert.equal(wrongFaculty.status, 403);
-    assert.equal((await rao.post(`/api/access-requests/${pending.id}/decision`, { decision: 'approve', comment: 'Safety briefing done' })).status, 200);
+    assert.equal(
+      (
+        await rao.post(`/api/access-requests/${pending.id}/decision`, {
+          decision: 'approve',
+          comment: 'Safety briefing done',
+        })
+      ).status,
+      200,
+    );
 
     const after = await irrigation.post('/api/bookings', slot);
     assert.equal(after.status, 201);
@@ -238,11 +307,42 @@ describe('project-based access approval', () => {
 
   it('prevents duplicate access requests and requests for open equipment', async () => {
     const aarav = await s.login('aarav@lablink.edu');
-    assert.equal((await aarav.post('/api/access-requests', { projectId: 'p-irrigation', equipmentId: 'eq-dso', justification: 'Need it for debugging power draw.' })).status, 400);
-    const first = await aarav.post('/api/access-requests', { projectId: 'p-irrigation', equipmentId: 'eq-sem', justification: 'Inspect solder joints under SEM.' });
+    assert.equal(
+      (
+        await aarav.post('/api/access-requests', {
+          projectId: 'p-irrigation',
+          equipmentId: 'eq-dso',
+          justification: 'Need it for debugging power draw.',
+        })
+      ).status,
+      400,
+    );
+    const first = await aarav.post('/api/access-requests', {
+      projectId: 'p-irrigation',
+      equipmentId: 'eq-sem',
+      justification: 'Inspect solder joints under SEM.',
+    });
     assert.equal(first.status, 201);
-    assert.equal((await aarav.post('/api/access-requests', { projectId: 'p-irrigation', equipmentId: 'eq-sem', justification: 'Inspect solder joints under SEM.' })).status, 409);
-    assert.equal((await aarav.post('/api/access-requests', { projectId: 'p-5g', equipmentId: 'eq-sem', justification: 'Not my project at all really.' })).status, 403);
+    assert.equal(
+      (
+        await aarav.post('/api/access-requests', {
+          projectId: 'p-irrigation',
+          equipmentId: 'eq-sem',
+          justification: 'Inspect solder joints under SEM.',
+        })
+      ).status,
+      409,
+    );
+    assert.equal(
+      (
+        await aarav.post('/api/access-requests', {
+          projectId: 'p-5g',
+          equipmentId: 'eq-sem',
+          justification: 'Not my project at all really.',
+        })
+      ).status,
+      403,
+    );
   });
 });
 
@@ -254,14 +354,27 @@ describe('fair-share swap negotiation', () => {
     const swapOption = check.body.resolution.options.find((o) => o.type === 'swap');
     assert.ok(swapOption);
 
-    const proposed = await arjun.post('/api/swaps', { targetBookingId: swapOption.action.targetBookingId, request, message: 'Spectrum mask test due Friday' });
+    const proposed = await arjun.post('/api/swaps', {
+      targetBookingId: swapOption.action.targetBookingId,
+      request,
+      message: 'Spectrum mask test due Friday',
+    });
     assert.equal(proposed.status, 201);
-    assert.equal((await arjun.post('/api/swaps', { targetBookingId: swapOption.action.targetBookingId, request })).status, 409, 'only one open swap');
+    assert.equal(
+      (await arjun.post('/api/swaps', { targetBookingId: swapOption.action.targetBookingId, request }))
+        .status,
+      409,
+      'only one open swap',
+    );
 
     const vikram = await s.login('vikram@lablink.edu');
     const inbox = await vikram.get('/api/swaps');
     assert.equal(inbox.body.items[0].direction, 'incoming');
-    assert.equal((await arjun.post(`/api/swaps/${proposed.body.swap.id}/respond`, { accept: true })).status, 403, 'only the holder can respond');
+    assert.equal(
+      (await arjun.post(`/api/swaps/${proposed.body.swap.id}/respond`, { accept: true })).status,
+      403,
+      'only the holder can respond',
+    );
 
     const accepted = await vikram.post(`/api/swaps/${proposed.body.swap.id}/respond`, { accept: true });
     assert.equal(accepted.status, 200);
@@ -269,13 +382,21 @@ describe('fair-share swap negotiation', () => {
 
     const arjunBookings = await arjun.get(`/api/bookings?equipmentId=eq-sa&from=${TUESDAY}&to=${TUESDAY}`);
     assert.ok(arjunBookings.body.items.some((b) => b.mine && b.startHour === 11 && b.endHour === 13));
-    const vikramBooking = (await vikram.get('/api/bookings?equipmentId=eq-sa')).body.items.find((b) => b.projectId === 'p-drone');
+    const vikramBooking = (await vikram.get('/api/bookings?equipmentId=eq-sa')).body.items.find(
+      (b) => b.projectId === 'p-drone',
+    );
     assert.notEqual(vikramBooking.date === TUESDAY && vikramBooking.startHour, 10, 'holder was moved');
   });
 
   it('adds the requester to the waitlist when a swap is declined', async () => {
     const isha = await s.login('isha@lablink.edu');
-    const request = { equipmentId: 'eq-jetson', projectId: 'p-sorter', date: TUESDAY, startHour: 13, endHour: 15 };
+    const request = {
+      equipmentId: 'eq-jetson',
+      projectId: 'p-sorter',
+      date: TUESDAY,
+      startHour: 13,
+      endHour: 15,
+    };
     const res = await isha.post('/api/bookings/check', request);
     const swap = res.body.resolution.options.find((o) => o.type === 'swap');
     assert.ok(swap, 'Aarav holds a flexible, lower-priority Jetson slot');
@@ -290,12 +411,20 @@ describe('fair-share swap negotiation', () => {
 describe('maintenance workflow', () => {
   it('cancels upcoming bookings and notifies users when equipment goes down', async () => {
     const admin = await s.login('admin@lablink.edu');
-    const before = s.store.data.bookings.filter((b) => b.equipmentId === 'eq-gel' && ['confirmed', 'pending'].includes(b.status) && b.date >= NOW.date).length;
+    const before = s.store.data.bookings.filter(
+      (b) => b.equipmentId === 'eq-gel' && ['confirmed', 'pending'].includes(b.status) && b.date >= NOW.date,
+    ).length;
     const res = await admin.patch('/api/equipment/eq-gel', { status: 'maintenance' });
     assert.equal(res.status, 200);
     assert.ok(res.body.cancelled >= before);
     const student = await s.login('sneha@lablink.edu');
-    const attempt = await student.post('/api/bookings', { equipmentId: 'eq-gel', projectId: 'p-crispr', date: addDays(NOW.date, 3), startHour: 9, endHour: 10 });
+    const attempt = await student.post('/api/bookings', {
+      equipmentId: 'eq-gel',
+      projectId: 'p-crispr',
+      date: addDays(NOW.date, 3),
+      startHour: 9,
+      endHour: 10,
+    });
     assert.ok([409, 422].includes(attempt.status));
   });
 });
@@ -330,7 +459,9 @@ describe('copilot chat', () => {
 
   it('builds a plan card from a scheduling request', async () => {
     const c = await s.login('arjun@lablink.edu');
-    const res = await c.post('/api/ai/chat', { message: 'Plan 4 hours on the Raspberry Pi kit before Friday' });
+    const res = await c.post('/api/ai/chat', {
+      message: 'Plan 4 hours on the Raspberry Pi kit before Friday',
+    });
     assert.equal(res.body.cards[0].type, 'plan');
     assert.ok(res.body.cards[0].sessions.length >= 2);
   });
@@ -347,18 +478,35 @@ describe('no-show release', () => {
     const local = await startServer({ now: { date: NOW.date, hour: 9.5 } });
     try {
       const eq = local.store.get('equipment', 'eq-la');
-      for (const b of local.store.data.bookings.filter((x) => x.date === NOW.date && (x.equipmentId === eq.id || ['u-aarav', 'u-vikram'].includes(x.userId)))) b.status = 'cancelled';
+      for (const b of local.store.data.bookings.filter(
+        (x) => x.date === NOW.date && (x.equipmentId === eq.id || ['u-aarav', 'u-vikram'].includes(x.userId)),
+      ))
+        b.status = 'cancelled';
       const aarav = await local.login('aarav@lablink.edu');
-      const made = await aarav.post('/api/bookings', { equipmentId: eq.id, projectId: 'p-irrigation', date: NOW.date, startHour: 11, endHour: 13 });
+      const made = await aarav.post('/api/bookings', {
+        equipmentId: eq.id,
+        projectId: 'p-irrigation',
+        date: NOW.date,
+        startHour: 11,
+        endHour: 13,
+      });
       assert.equal(made.status, 201, JSON.stringify(made.body));
       const vikram = await local.login('vikram@lablink.edu');
-      const wait = await vikram.post('/api/waitlist', { equipmentId: eq.id, projectId: 'p-irrigation', date: NOW.date, startHour: 12, endHour: 13 });
+      const wait = await vikram.post('/api/waitlist', {
+        equipmentId: eq.id,
+        projectId: 'p-irrigation',
+        date: NOW.date,
+        startHour: 12,
+        endHour: 13,
+      });
       assert.equal(wait.status, 201, JSON.stringify(wait.body));
 
       local.clock.current = { date: NOW.date, hour: 11.6 };
       await aarav.get('/api/dashboard'); // any authenticated call runs the lifecycle sweep
       assert.equal(local.store.get('bookings', made.body.booking.id).status, 'no_show');
-      const promoted = (await vikram.get(`/api/bookings?equipmentId=${eq.id}&from=${NOW.date}&to=${NOW.date}`)).body.items.find((b) => b.mine);
+      const promoted = (
+        await vikram.get(`/api/bookings?equipmentId=${eq.id}&from=${NOW.date}&to=${NOW.date}`)
+      ).body.items.find((b) => b.mine);
       assert.equal(promoted.status, 'confirmed');
       assert.equal(promoted.startHour, 12);
     } finally {

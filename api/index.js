@@ -10,7 +10,11 @@ seedStore(store, campusNow());
 
 const app = createApp({
   store,
-  config: { secret: process.env.SESSION_SECRET, demoMode: process.env.DEMO_MODE !== 'false', trustProxy: true },
+  config: {
+    secret: process.env.SESSION_SECRET,
+    demoMode: process.env.DEMO_MODE !== 'false',
+    trustProxy: true,
+  },
 });
 
 export default app.handler;

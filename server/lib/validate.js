@@ -65,7 +65,8 @@ export const v = {
   },
 
   object(value, field = 'body') {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) return fail(field, 'must be a JSON object');
+    if (!value || typeof value !== 'object' || Array.isArray(value))
+      return fail(field, 'must be a JSON object');
     return value;
   },
 };

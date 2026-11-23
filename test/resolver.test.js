@@ -23,7 +23,10 @@ describe('conflict resolver', () => {
   it('offers nearby slots on the same equipment, sorted by rank', () => {
     assert.ok(types.includes('alt_slot'));
     const ranks = resolution.options.map((o) => o.rank);
-    assert.deepEqual(ranks, [...ranks].sort((a, b) => b - a));
+    assert.deepEqual(
+      ranks,
+      [...ranks].sort((a, b) => b - a),
+    );
   });
 
   it('offers a fair-share swap when the holder is lower priority and flexible', () => {
@@ -36,7 +39,9 @@ describe('conflict resolver', () => {
   it('suggests equivalent equipment and an access path for restricted ones', () => {
     const alts = resolution.options.filter((o) => o.type === 'alt_equipment');
     assert.ok(alts.length >= 1);
-    assert.ok(alts.some((o) => o.action.kind === 'request_access' || o.action.sessions[0].equipmentId !== 'eq-sa'));
+    assert.ok(
+      alts.some((o) => o.action.kind === 'request_access' || o.action.sessions[0].equipmentId !== 'eq-sa'),
+    );
   });
 
   it('always includes a waitlist fallback', () => {
@@ -75,7 +80,19 @@ describe('similarity', () => {
 
 describe('planner', () => {
   it('spreads sessions before the deadline within quota', () => {
-    const { sessions, shortfall } = planSessions(store, arjun, { equipmentId: 'eq-rpi', projectId: 'p-5g', hours: 6, deadline: addDays(NOW.date, 4), sessionHours: 2, preferred: 'any' }, NOW);
+    const { sessions, shortfall } = planSessions(
+      store,
+      arjun,
+      {
+        equipmentId: 'eq-rpi',
+        projectId: 'p-5g',
+        hours: 6,
+        deadline: addDays(NOW.date, 4),
+        sessionHours: 2,
+        preferred: 'any',
+      },
+      NOW,
+    );
     assert.equal(shortfall, 0);
     assert.ok(sessions.length >= 3);
     assert.ok(sessions.every((s) => s.date <= addDays(NOW.date, 4)));
@@ -83,13 +100,37 @@ describe('planner', () => {
   });
 
   it('reports a shortfall when the deadline is too tight', () => {
-    const plan = planSessions(store, arjun, { equipmentId: 'eq-dso', projectId: 'p-5g', hours: 40, deadline: addDays(NOW.date, 2), sessionHours: 2, preferred: 'any' }, NOW);
+    const plan = planSessions(
+      store,
+      arjun,
+      {
+        equipmentId: 'eq-dso',
+        projectId: 'p-5g',
+        hours: 40,
+        deadline: addDays(NOW.date, 2),
+        sessionHours: 2,
+        preferred: 'any',
+      },
+      NOW,
+    );
     assert.ok(plan.shortfall > 0);
     assert.ok(plan.notes.length > 0);
   });
 
   it('honours time-of-day preferences when possible', () => {
-    const { sessions } = planSessions(store, arjun, { equipmentId: 'eq-rpi', projectId: 'p-5g', hours: 2, deadline: addDays(NOW.date, 6), sessionHours: 2, preferred: 'afternoon' }, NOW);
+    const { sessions } = planSessions(
+      store,
+      arjun,
+      {
+        equipmentId: 'eq-rpi',
+        projectId: 'p-5g',
+        hours: 2,
+        deadline: addDays(NOW.date, 6),
+        sessionHours: 2,
+        preferred: 'afternoon',
+      },
+      NOW,
+    );
     assert.ok(sessions[0].startHour >= 12);
   });
 });

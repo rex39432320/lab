@@ -33,10 +33,18 @@ export class Router {
     this.routes.push({ method, ...compile(pattern), options: { auth: true, ...options }, handler });
   }
 
-  get(pattern, options, handler) { this.add('GET', pattern, options, handler); }
-  post(pattern, options, handler) { this.add('POST', pattern, options, handler); }
-  patch(pattern, options, handler) { this.add('PATCH', pattern, options, handler); }
-  delete(pattern, options, handler) { this.add('DELETE', pattern, options, handler); }
+  get(pattern, options, handler) {
+    this.add('GET', pattern, options, handler);
+  }
+  post(pattern, options, handler) {
+    this.add('POST', pattern, options, handler);
+  }
+  patch(pattern, options, handler) {
+    this.add('PATCH', pattern, options, handler);
+  }
+  delete(pattern, options, handler) {
+    this.add('DELETE', pattern, options, handler);
+  }
 
   /** @returns {{route, params} | {methodMismatch: true} | null} */
   match(method, path) {

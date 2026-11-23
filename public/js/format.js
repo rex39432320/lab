@@ -39,14 +39,33 @@ export function timeAgo(ms) {
   return `${Math.floor(s / 86400)} d ago`;
 }
 
-export const initials = (name) => name.split(/\s+/).filter((p) => /^[A-Za-z]/.test(p)).slice(0, 2).map((p) => p[0].toUpperCase()).join('');
+export const initials = (name) =>
+  name
+    .split(/\s+/)
+    .filter((p) => /^[A-Za-z]/.test(p))
+    .slice(0, 2)
+    .map((p) => p[0].toUpperCase())
+    .join('');
 export const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 export const CATEGORY_CLASS = {
-  'Test & Measurement': 'cat-test', 'Development Kits': 'cat-dev', Computing: 'cat-comp', Fabrication: 'cat-fab', Robotics: 'cat-robo',
-  Chemistry: 'cat-chem', 'Life Sciences': 'cat-life', 'Microscopy & Imaging': 'cat-micro', 'Optics & Photonics': 'cat-optic',
+  'Test & Measurement': 'cat-test',
+  'Development Kits': 'cat-dev',
+  Computing: 'cat-comp',
+  Fabrication: 'cat-fab',
+  Robotics: 'cat-robo',
+  Chemistry: 'cat-chem',
+  'Life Sciences': 'cat-life',
+  'Microscopy & Imaging': 'cat-micro',
+  'Optics & Photonics': 'cat-optic',
 };
 export const STATUS_BADGE = {
-  confirmed: ['success', 'Confirmed'], pending: ['warn', 'Awaiting approval'], checked_in: ['info', 'In progress'], completed: ['muted', 'Completed'],
-  cancelled: ['muted', 'Cancelled'], no_show: ['danger', 'No-show'], rejected: ['danger', 'Declined'], expired: ['muted', 'Expired'],
+  confirmed: ['success', 'Confirmed'],
+  pending: ['warn', 'Awaiting approval'],
+  checked_in: ['info', 'In progress'],
+  completed: ['muted', 'Completed'],
+  cancelled: ['muted', 'Cancelled'],
+  no_show: ['danger', 'No-show'],
+  rejected: ['danger', 'Declined'],
+  expired: ['muted', 'Expired'],
 };

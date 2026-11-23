@@ -14,7 +14,10 @@ async function request(method, path, body) {
     res = await fetch(path, {
       method,
       credentials: 'same-origin',
-      headers: { 'X-Requested-With': 'lablink', ...(body !== undefined && { 'Content-Type': 'application/json' }) },
+      headers: {
+        'X-Requested-With': 'lablink',
+        ...(body !== undefined && { 'Content-Type': 'application/json' }),
+      },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
@@ -22,9 +25,14 @@ async function request(method, path, body) {
   }
   const text = await res.text();
   let data = null;
-  try { data = text ? JSON.parse(text) : null; } catch { /* non-JSON */ }
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    /* non-JSON */
+  }
   if (!res.ok) {
-    if (res.status === 401 && !path.startsWith('/api/auth/')) window.dispatchEvent(new CustomEvent('auth:expired'));
+    if (res.status === 401 && !path.startsWith('/api/auth/'))
+      window.dispatchEvent(new CustomEvent('auth:expired'));
     throw new ApiError(data?.error ?? `Request failed (${res.status})`, res.status, data);
   }
   return data ?? text;
@@ -39,7 +47,8 @@ export const api = {
 
 export const qs = (params) => {
   const sp = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== null && v !== '' && v !== false) sp.set(k, v);
+  for (const [k, v] of Object.entries(params))
+    if (v !== undefined && v !== null && v !== '' && v !== false) sp.set(k, v);
   const s = sp.toString();
   return s ? `?${s}` : '';
 };
